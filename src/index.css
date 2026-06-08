@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-brand-bg: #0B0F19;
+  --color-brand-panel: #131B2E;
+  --color-brand-panel-header: #1B2641;
+  --color-brand-border: #24355A;
+  --color-brand-text: #F3F4F6;
+  --color-brand-muted: #9CA3AF;
+  --color-brand-dark: #4B5563;
+  --color-brand-console: #070A13;
+  
+  --color-brand-primary: #6366F1;
+  --color-brand-primary-hover: #4F46E5;
+  --color-brand-primary-light: rgba(99, 102, 241, 0.1);
+  
+  --color-brand-success: #10B981;
+  --color-brand-success-light: rgba(16, 185, 129, 0.1);
+  
+  --color-brand-warning: #F59E0B;
+  --color-brand-warning-light: rgba(245, 158, 11, 0.1);
+  
+  --color-brand-danger: #EF4444;
+  --color-brand-danger-light: rgba(239, 68, 68, 0.1);
+}
+
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: var(--color-brand-console);
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-brand-border);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brand-primary);
+  }
+}
