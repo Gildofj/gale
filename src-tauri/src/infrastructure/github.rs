@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use indexmap::IndexMap;
 use serde::Deserialize;
 use serde_json::Value;
 use crate::domain::pipeline::{Job, PipelineEngine, Step, Workflow};
@@ -7,7 +7,7 @@ use crate::domain::pipeline::{Job, PipelineEngine, Step, Workflow};
 struct GithubWorkflowYaml {
     name: Option<String>,
     on: Value,
-    jobs: HashMap<String, GithubJobYaml>,
+    jobs: IndexMap<String, GithubJobYaml>,
 }
 
 #[derive(Debug, Deserialize)]

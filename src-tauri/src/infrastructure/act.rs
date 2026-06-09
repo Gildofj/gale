@@ -1,8 +1,75 @@
 use std::process::Stdio;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Mutex, OnceLock};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
+use tauri::Manager;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use crate::domain::pipeline::{LogLine, RunnerService};
+
+static ACTIVE_PID: OnceLock<Mutex<Option<u32>>> = OnceLock::new();
+static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
+
+pub fn init_app_handle(handle: tauri::AppHandle) {
+    let _ = APP_HANDLE.set(handle);
+}
+
+fn get_secrets_file_path(repo_path: &str) -> Option<std::path::PathBuf> {
+    let handle = APP_HANDLE.get()?;
+    let mut hasher = DefaultHasher::new();
+    repo_path.hash(&mut hasher);
+    let hash = format!("{:x}", hasher.finish());
+
+    let mut path = handle.path().app_data_dir().ok()?;
+    path.push("secrets");
+    path.push(format!("{}.secrets", hash));
+    
+    if path.exists() {
+        Some(path)
+    } else {
+        None
+    }
+}
+
+pub fn get_active_pid() -> &'static Mutex<Option<u32>> {
+    ACTIVE_PID.get_or_init(|| Mutex::new(None))
+}
+
+pub fn stop_active_process() -> Result<(), String> {
+    let pid = {
+        if let Ok(active) = get_active_pid().lock() {
+            active.clone()
+        } else {
+            None
+        }
+    };
+
+    if let Some(pid) = pid {
+        #[cfg(target_os = "windows")]
+        {
+            let mut kill_cmd = std::process::Command::new("taskkill");
+            kill_cmd.args(&["/F", "/T", "/PID", &pid.to_string()]);
+            let _ = kill_cmd.status();
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            let mut kill_cmd = std::process::Command::new("kill");
+            kill_cmd.args(&["-9", &pid.to_string()]);
+            let _ = kill_cmd.status();
+        }
+
+        if let Ok(mut active) = get_active_pid().lock() {
+            *active = None;
+        }
+
+        Ok(())
+    } else {
+        Err("No active job process to stop".to_string())
+    }
+}
+
 
 pub struct ActRunnerService;
 
@@ -21,16 +88,28 @@ impl RunnerService for ActRunnerService {
             workflow_file
         };
 
-        // Determine terminal launcher command
+        let secrets_file = get_secrets_file_path(repo_path);
+
         #[cfg(target_os = "windows")]
         let mut cmd = Command::new("powershell");
         #[cfg(target_os = "windows")]
-        cmd.args(&["-NoProfile", "-Command", &format!("act -W {} -j {}", relative_path, job_id)]);
+        {
+            let mut act_args = format!("act -W {} -j {} --reuse", relative_path, job_id);
+            if let Some(ref path) = secrets_file {
+                act_args.push_str(&format!(" --secret-file \"{}\"", path.to_string_lossy()));
+            }
+            cmd.args(&["-NoProfile", "-Command", &act_args]);
+        }
 
         #[cfg(not(target_os = "windows"))]
         let mut cmd = Command::new("act");
         #[cfg(not(target_os = "windows"))]
-        cmd.args(&["-W", relative_path, "-j", job_id]);
+        {
+            cmd.args(&["-W", relative_path, "-j", job_id, "--reuse"]);
+            if let Some(ref path) = secrets_file {
+                cmd.args(&["--secret-file", &path.to_string_lossy()]);
+            }
+        }
 
         cmd.current_dir(repo_path)
             .stdout(Stdio::piped())
@@ -43,6 +122,14 @@ impl RunnerService for ActRunnerService {
             )
         })?;
 
+        let pid = child.id();
+        println!("[BACKEND] Spawned act process with PID: {:?}", pid);
+        if let Some(pid) = pid {
+            if let Ok(mut active) = get_active_pid().lock() {
+                *active = Some(pid);
+            }
+        }
+
         let stdout = child.stdout.take().ok_or("Failed to open stdout")?;
         let stderr = child.stderr.take().ok_or("Failed to open stderr")?;
 
@@ -54,6 +141,7 @@ impl RunnerService for ActRunnerService {
         let stdout_handle = tokio::spawn(async move {
             let mut reader = BufReader::new(stdout).lines();
             while let Ok(Some(line)) = reader.next_line().await {
+                println!("[BACKEND stdout] {}", line);
                 let (step_name, clean_msg) = parse_act_line(&line);
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -73,6 +161,7 @@ impl RunnerService for ActRunnerService {
         let stderr_handle = tokio::spawn(async move {
             let mut reader = BufReader::new(stderr).lines();
             while let Ok(Some(line)) = reader.next_line().await {
+                println!("[BACKEND stderr] {}", line);
                 let (step_name, clean_msg) = parse_act_line(&line);
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
@@ -89,13 +178,24 @@ impl RunnerService for ActRunnerService {
             }
         });
 
-        let status = child.wait().await.map_err(|e| format!("Failed to wait for act process: {}", e))?;
-        let _ = stdout_handle.await;
-        let _ = stderr_handle.await;
+        let status = child.wait().await;
+        println!("[BACKEND] Child wait result: {:?}", status);
+
+        if let Ok(mut active) = get_active_pid().lock() {
+            *active = None;
+        }
+
+        // Abort reader tasks to prevent grandchild pipe leaks from hanging the command
+        stdout_handle.abort();
+        stderr_handle.abort();
+
+        let status = status.map_err(|e| format!("Failed to wait for act process: {}", e))?;
 
         if status.success() {
+            println!("[BACKEND] Job completed successfully");
             Ok(())
         } else {
+            println!("[BACKEND] Job failed with exit status: {:?}", status.code());
             Err(format!("act run completed with exit code: {:?}", status.code()))
         }
     }
