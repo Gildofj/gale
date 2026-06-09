@@ -26,7 +26,6 @@ export function JobSelector() {
 
   return (
     <div className="px-6 py-4 bg-brand-panel border-b border-brand-border flex flex-col md:flex-row justify-between items-center gap-4 select-none">
-      {/* Title & Navigation Tabs */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
         <div className="flex flex-col">
           <span className="text-[10px] font-bold uppercase tracking-wider text-brand-muted font-mono">
@@ -37,7 +36,6 @@ export function JobSelector() {
           </span>
         </div>
 
-        {/* Tab Selection buttons */}
         <div className="flex bg-brand-console border border-brand-border p-1 rounded-lg">
           <button
             onClick={() => setActiveTab("graph")}
@@ -68,7 +66,6 @@ export function JobSelector() {
         </div>
       </div>
 
-      {/* Control Action Buttons */}
       <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
         <Button
           variant={isWorkflowRunning ? "danger" : "primary"}

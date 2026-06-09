@@ -19,9 +19,29 @@ export function ConsoleLogs() {
   const depsMet = activeJob ? areDependenciesMet(activeJob, jobStatuses) : true;
   const isRunningThisJob = runningJobId === activeJob?.id;
 
-  // Rola o terminal para o fim quando chegam novos logs ou muda o job ativo
+  const lastScrollTimeRef = useRef(0);
+  const activeJobIdRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
-    consoleEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!consoleEndRef.current) return;
+
+    const now = Date.now();
+    const isJobChange = activeJobIdRef.current !== activeJob?.id;
+    activeJobIdRef.current = activeJob?.id;
+
+    if (isJobChange) {
+      consoleEndRef.current.scrollIntoView({ behavior: "auto" });
+      lastScrollTimeRef.current = now;
+      return;
+    }
+
+    const timeDiff = now - lastScrollTimeRef.current;
+    if (timeDiff > 180) {
+      consoleEndRef.current.scrollIntoView({ behavior: "smooth" });
+    } else {
+      consoleEndRef.current.scrollIntoView({ behavior: "auto" });
+    }
+    lastScrollTimeRef.current = now;
   }, [activeJobLogs.length, activeJob?.id]);
 
   if (!activeJob) return null;
@@ -41,7 +61,6 @@ export function ConsoleLogs() {
 
   return (
     <div className="flex-1 flex flex-col bg-brand-console font-mono overflow-hidden">
-      {/* Alerta de Dependências Pendentes */}
       {!depsMet && (
         <div className="bg-brand-warning-light border-b border-brand-warning/20 px-4 py-2 text-xs text-brand-warning flex items-center gap-2 select-none">
           <span>⚠️</span>
@@ -52,7 +71,6 @@ export function ConsoleLogs() {
         </div>
       )}
 
-      {/* Terminal Title & Controls */}
       <div className="flex justify-between items-center py-2.5 px-4 bg-black/20 border-b border-brand-border text-xs select-none">
         <div className="flex items-center gap-2 font-semibold text-brand-text">
           {isRunningThisJob && (
@@ -72,7 +90,6 @@ export function ConsoleLogs() {
         </div>
       </div>
 
-      {/* Real-time Logs Console */}
       <div className="flex-1 p-4 overflow-y-auto text-[11px] leading-relaxed flex flex-col gap-1 select-text custom-scrollbar">
         {activeJobLogs.length === 0 ? (
           <div className="text-brand-dark italic select-none">

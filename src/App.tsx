@@ -21,7 +21,6 @@ export default function App() {
 
   const { autoCleanOnStartup } = useDockerStore();
 
-  // Inicializa listeners do IPC do Tauri (runner-log, workflows-changed)
   useEffect(() => {
     initListeners();
     autoCleanOnStartup();
@@ -32,21 +31,15 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-brand-bg text-brand-text font-sans overflow-hidden">
-      {/* Barra de conexões e barra de controle do diretório de trabalho */}
       <WorkspaceHeader />
 
-      {/* Área principal dividida */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Barra lateral de listagem de arquivos YAML */}
         <WorkflowSidebar />
 
-        {/* Console e controles de job/workflow ativos */}
         <div className="flex-1 flex flex-col bg-brand-bg overflow-hidden">
           {activeWorkflow ? (
             <>
-              {/* Seleção do job de workflow ativo / Controle de Abas */}
               <JobSelector />
-              {/* Renderização condicional com base na aba ativa */}
               {activeTab === "graph" ? <WorkflowGraph /> : <ConsoleLogs />}
             </>
           ) : (
@@ -62,12 +55,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* Modal de gerenciamento de secrets local */}
       <SecretsModal />
 
-      {/* Modal de gerenciamento de recursos Docker */}
       <DockerModal />
     </div>
   );
 }
-

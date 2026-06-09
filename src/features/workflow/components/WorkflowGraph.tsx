@@ -13,7 +13,6 @@ import { useWorkflowStore, areDependenciesMet } from "../store/workflowStore";
 import { JobNode } from "./JobNode";
 import { Job } from "../../../entities/pipeline";
 
-// Define node types outside the component to preserve referential identity
 const nodeTypes = {
   jobNode: JobNode,
 };
@@ -33,7 +32,6 @@ export function WorkflowGraph() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Graph Layout & Construction Algorithm
   const graphData = useMemo(() => {
     if (!activeWorkflow || activeWorkflow.jobs.length === 0) {
       return { nodes: [], edges: [] };
@@ -64,12 +62,10 @@ export function WorkflowGraph() {
       return ranks[id];
     };
 
-    // Calculate rank for all nodes
     for (const job of jobs) {
       getRank(job.id);
     }
 
-    // Group node IDs by rank
     const columns: Record<number, string[]> = {};
     for (const job of jobs) {
       const r = ranks[job.id] ?? 0;
@@ -99,7 +95,7 @@ export function WorkflowGraph() {
           id: jobId,
           type: "jobNode",
           position: { x: colX, y: colY },
-          data: { job }, // Static details; dynamic properties injected below
+          data: { job },
         });
 
         if (job.needs) {
@@ -127,7 +123,6 @@ export function WorkflowGraph() {
     return { nodes: initialNodes, edges: initialEdges };
   }, [activeWorkflow, jobStatuses]);
 
-  // Handle single job execution trigger
   const handleRunJob = useCallback(
     async (job: Job) => {
       await runSingleJob(job);
@@ -139,7 +134,6 @@ export function WorkflowGraph() {
     await stopJob();
   }, [stopJob]);
 
-  // Sync state data into the React Flow nodes array
   useEffect(() => {
     const updatedNodes = graphData.nodes.map((node) => {
       const jobId = node.id;

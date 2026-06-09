@@ -82,7 +82,6 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
         isActive ? "shadow-[0_0_12px_rgba(224,90,71,0.15)] scale-[1.02]" : "hover:border-brand-muted/40"
       } ${!depsMet ? "opacity-60 border-dashed" : ""}`}
     >
-      {/* Input Handle (Target) - only show if there are dependencies */}
       {job.needs && job.needs.length > 0 && (
         <Handle
           type="target"
@@ -128,12 +127,10 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
           title={isRunningThis ? "Stop Job" : "Run Job"}
         >
           {isRunningThis ? (
-            // Square/Stop icon
             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path d="M6 19h12V5H6v14z" />
             </svg>
           ) : (
-            // Play icon
             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -141,7 +138,6 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
         </button>
       </div>
 
-      {/* Output Handle (Source) */}
       <Handle
         type="source"
         position={Position.Right}
