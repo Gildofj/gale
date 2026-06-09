@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWorkflowStore, areDependenciesMet } from "../store/workflowStore";
 import { Button } from "../../../shared/components/Button";
 
@@ -13,35 +13,49 @@ export function ConsoleLogs() {
     stopJob,
   } = useWorkflowStore();
 
-  const consoleEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottomRef = useRef(true);
+  const activeJobIdRef = useRef<string | undefined>(undefined);
 
   const activeJobLogs = activeJob ? logs[activeJob.id] || [] : [];
   const depsMet = activeJob ? areDependenciesMet(activeJob, jobStatuses) : true;
   const isRunningThisJob = runningJobId === activeJob?.id;
 
-  const lastScrollTimeRef = useRef(0);
-  const activeJobIdRef = useRef<string | undefined>(undefined);
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    const atBottom = scrollHeight - scrollTop - clientHeight < 35;
+    
+    if (isAtBottomRef.current !== atBottom) {
+      setIsAtBottom(atBottom);
+      isAtBottomRef.current = atBottom;
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (!containerRef.current) return;
+    containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    setIsAtBottom(true);
+    isAtBottomRef.current = true;
+  };
 
   useEffect(() => {
-    if (!consoleEndRef.current) return;
+    if (!containerRef.current) return;
 
-    const now = Date.now();
     const isJobChange = activeJobIdRef.current !== activeJob?.id;
     activeJobIdRef.current = activeJob?.id;
 
     if (isJobChange) {
-      consoleEndRef.current.scrollIntoView({ behavior: "auto" });
-      lastScrollTimeRef.current = now;
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      setIsAtBottom(true);
+      isAtBottomRef.current = true;
       return;
     }
 
-    const timeDiff = now - lastScrollTimeRef.current;
-    if (timeDiff > 180) {
-      consoleEndRef.current.scrollIntoView({ behavior: "smooth" });
-    } else {
-      consoleEndRef.current.scrollIntoView({ behavior: "auto" });
+    if (isAtBottomRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-    lastScrollTimeRef.current = now;
   }, [activeJobLogs.length, activeJob?.id]);
 
   if (!activeJob) return null;
@@ -60,7 +74,7 @@ export function ConsoleLogs() {
     !depsMet;
 
   return (
-    <div className="flex-1 flex flex-col bg-brand-console font-mono overflow-hidden">
+    <div className="flex-1 flex flex-col bg-brand-console font-mono overflow-hidden relative">
       {!depsMet && (
         <div className="bg-brand-warning-light border-b border-brand-warning/20 px-4 py-2 text-xs text-brand-warning flex items-center gap-2 select-none">
           <span>⚠️</span>
@@ -90,7 +104,11 @@ export function ConsoleLogs() {
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto text-[11px] leading-relaxed flex flex-col gap-1 select-text custom-scrollbar">
+      <div 
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="flex-1 p-4 overflow-y-auto text-[11px] leading-relaxed flex flex-col gap-1 select-text custom-scrollbar"
+      >
         {activeJobLogs.length === 0 ? (
           <div className="text-brand-dark italic select-none">
             Click "Run Job" to execute this job locally.
@@ -114,8 +132,18 @@ export function ConsoleLogs() {
             </div>
           ))
         )}
-        <div ref={consoleEndRef} />
       </div>
+
+      {!isAtBottom && activeJobLogs.length > 0 && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-4 right-6 bg-brand-primary hover:bg-brand-primary-hover text-white text-xs px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 transition-all duration-200 cursor-pointer active:scale-95 z-10"
+        >
+          <span>⬇️</span>
+          <span className="font-sans font-semibold">Follow Logs</span>
+        </button>
+      )}
     </div>
   );
 }
+
