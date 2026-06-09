@@ -5,6 +5,7 @@ import { WorkspaceHeader } from "./features/workspace/components/WorkspaceHeader
 import { WorkflowSidebar } from "./features/workflow/components/WorkflowSidebar";
 import { JobSelector } from "./features/workflow/components/JobSelector";
 import { ConsoleLogs } from "./features/workflow/components/ConsoleLogs";
+import { WorkflowGraph } from "./features/workflow/components/WorkflowGraph";
 import { SecretsModal } from "./features/secrets/components/SecretsModal";
 import { DockerModal } from "./features/docker/components/DockerModal";
 import "./index.css";
@@ -13,6 +14,7 @@ export default function App() {
   const {
     repoPath,
     activeWorkflow,
+    activeTab,
     initListeners,
     cleanupListeners,
   } = useWorkflowStore();
@@ -42,10 +44,10 @@ export default function App() {
         <div className="flex-1 flex flex-col bg-brand-bg overflow-hidden">
           {activeWorkflow ? (
             <>
-              {/* Seleção do job de workflow ativo */}
+              {/* Seleção do job de workflow ativo / Controle de Abas */}
               <JobSelector />
-              {/* Terminal virtual e logs em tempo real */}
-              <ConsoleLogs />
+              {/* Renderização condicional com base na aba ativa */}
+              {activeTab === "graph" ? <WorkflowGraph /> : <ConsoleLogs />}
             </>
           ) : (
             <div className="flex-1 flex flex-col justify-center items-center text-center p-10 bg-brand-bg gap-4 select-none">
@@ -68,3 +70,4 @@ export default function App() {
     </div>
   );
 }
+

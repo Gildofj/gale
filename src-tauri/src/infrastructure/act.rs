@@ -94,7 +94,11 @@ impl RunnerService for ActRunnerService {
         let mut cmd = Command::new("powershell");
         #[cfg(target_os = "windows")]
         {
-            let mut act_args = format!("act -W {} -j {} --reuse", relative_path, job_id);
+            let mut act_args = format!(
+                "act -W {} -j {} --reuse -P ubuntu-22.04=catthehacker/ubuntu:act-22.04 -P ubuntu-20.04=catthehacker/ubuntu:act-20.04 -P ubuntu-latest=catthehacker/ubuntu:act-latest -P macos-latest=catthehacker/ubuntu:act-latest -P windows-latest=catthehacker/ubuntu:act-latest",
+                relative_path,
+                job_id
+            );
             if let Some(ref path) = secrets_file {
                 act_args.push_str(&format!(" --secret-file \"{}\"", path.to_string_lossy()));
             }
@@ -105,7 +109,16 @@ impl RunnerService for ActRunnerService {
         let mut cmd = Command::new("act");
         #[cfg(not(target_os = "windows"))]
         {
-            cmd.args(&["-W", relative_path, "-j", job_id, "--reuse"]);
+            cmd.args(&[
+                "-W", relative_path,
+                "-j", job_id,
+                "--reuse",
+                "-P", "ubuntu-22.04=catthehacker/ubuntu:act-22.04",
+                "-P", "ubuntu-20.04=catthehacker/ubuntu:act-20.04",
+                "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest",
+                "-P", "macos-latest=catthehacker/ubuntu:act-latest",
+                "-P", "windows-latest=catthehacker/ubuntu:act-latest",
+            ]);
             if let Some(ref path) = secrets_file {
                 cmd.args(&["--secret-file", &path.to_string_lossy()]);
             }

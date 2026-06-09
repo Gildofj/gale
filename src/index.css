@@ -1,31 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --color-brand-bg: #0B0F19;
-  --color-brand-panel: #131B2E;
-  --color-brand-panel-header: #1B2641;
-  --color-brand-border: #24355A;
-  --color-brand-text: #F3F4F6;
+  --color-brand-bg: #121316;
+  --color-brand-panel: #1A1C20;
+  --color-brand-panel-header: #202227;
+  --color-brand-border: #282A30;
+  --color-brand-text: #E5E7EB;
   --color-brand-muted: #9CA3AF;
   --color-brand-dark: #4B5563;
-  --color-brand-console: #070A13;
+  --color-brand-console: #090A0C;
   
-  --color-brand-primary: #6366F1;
-  --color-brand-primary-hover: #4F46E5;
-  --color-brand-primary-light: rgba(99, 102, 241, 0.1);
+  --color-brand-primary: #E05A47;
+  --color-brand-primary-hover: #C54634;
+  --color-brand-primary-light: rgba(224, 90, 71, 0.08);
   
   --color-brand-success: #10B981;
-  --color-brand-success-light: rgba(16, 185, 129, 0.1);
+  --color-brand-success-light: rgba(16, 185, 129, 0.08);
   
-  --color-brand-warning: #F59E0B;
-  --color-brand-warning-light: rgba(245, 158, 11, 0.1);
+  --color-brand-warning: #EAB308;
+  --color-brand-warning-light: rgba(234, 179, 8, 0.08);
   
   --color-brand-danger: #EF4444;
-  --color-brand-danger-light: rgba(239, 68, 68, 0.1);
+  --color-brand-danger-light: rgba(239, 68, 68, 0.08);
 }
 
 @utility custom-scrollbar {
@@ -44,3 +45,86 @@
     background: var(--color-brand-primary);
   }
 }
+
+/* React Flow Theming Overrides */
+.react-flow__renderer {
+  background-color: var(--color-brand-bg);
+}
+
+.react-flow__handle {
+  width: 8px !important;
+  height: 8px !important;
+  background-color: var(--color-brand-primary) !important;
+  border: 2px solid var(--color-brand-bg) !important;
+}
+
+.react-flow__handle-left {
+  left: -4px !important;
+}
+
+.react-flow__handle-right {
+  right: -4px !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-brand-border) !important;
+  stroke-width: 2px !important;
+  transition: stroke 0.2s ease;
+}
+
+.react-flow__edge.active .react-flow__edge-path {
+  stroke: var(--color-brand-primary) !important;
+  stroke-width: 2.5px !important;
+}
+
+.react-flow__edge.running .react-flow__edge-path {
+  stroke: var(--color-brand-warning) !important;
+  stroke-width: 2.5px !important;
+  stroke-dasharray: 5;
+  animation: dash 1s linear infinite;
+}
+
+.react-flow__edge.success .react-flow__edge-path {
+  stroke: var(--color-brand-success) !important;
+  stroke-width: 2px !important;
+}
+
+.react-flow__controls {
+  background-color: var(--color-brand-panel) !important;
+  border: 1px solid var(--color-brand-border) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  padding: 4px !important;
+  display: flex !important;
+  gap: 2px !important;
+}
+
+.react-flow__controls-button {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  color: var(--color-brand-text) !important;
+  fill: currentColor !important;
+  transition: all 0.15s ease !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: var(--color-brand-panel-header) !important;
+  color: var(--color-brand-primary) !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+@keyframes dash {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+

@@ -14,21 +14,23 @@ interface WorkflowState {
   jobStatuses: Record<string, "pending" | "running" | "success" | "error">;
   isWorkflowRunning: boolean;
   abortWorkflow: boolean;
+  activeTab: "graph" | "logs";
   
   // Dependências de ambiente
   dockerInstalled: boolean;
   actInstalled: boolean;
   checkingDeps: boolean;
-
+  
   // Listeners de Tauri
   unlisteners: UnlistenFn[];
 
   // Setters simples
   setActiveWorkflow: (wf: Workflow | null) => void;
   setActiveJob: (job: Job | null) => void;
+  setActiveTab: (tab: "graph" | "logs") => void;
   setRepoPath: (path: string) => void;
   clearLogs: () => void;
-
+  
   // Ações complexas
   checkDependencies: () => Promise<void>;
   selectDirectory: () => Promise<void>;
@@ -36,7 +38,7 @@ interface WorkflowState {
   reloadWorkflows: (path: string) => Promise<void>;
   initListeners: () => Promise<void>;
   cleanupListeners: () => void;
-
+  
   // Execução de Pipelines
   runSingleJob: (job: Job) => Promise<boolean>;
   runJob: () => Promise<void>;
@@ -90,6 +92,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   jobStatuses: {},
   isWorkflowRunning: false,
   abortWorkflow: false,
+  activeTab: "graph",
   
   dockerInstalled: false,
   actInstalled: false,
@@ -107,6 +110,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
 
   setActiveJob: (job) => set({ activeJob: job }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
   setRepoPath: (path) => set({ repoPath: path }),
   clearLogs: () => set({ logs: {} }),
 

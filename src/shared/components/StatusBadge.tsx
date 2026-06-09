@@ -14,8 +14,8 @@ export function StatusBadge({ status, label, type = "job" }: StatusBadgeProps) {
       >
         <span className={`w-2 h-2 rounded-full ${
           isOk 
-            ? "bg-brand-success shadow-[0_0_8px_rgba(16,185,129,0.7)]" 
-            : "bg-brand-danger shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+            ? "bg-brand-success shadow-[0_0_8px_rgba(16,185,129,0.5)]" 
+            : "bg-brand-danger shadow-[0_0_8px_rgba(239,68,68,0.5)]"
         }`} />
         {label && <span>{label}</span>}
       </div>
@@ -31,15 +31,15 @@ export function StatusBadge({ status, label, type = "job" }: StatusBadgeProps) {
       title: "Pending",
     },
     running: {
-      dotClass: "bg-brand-primary animate-pulse",
+      dotClass: "bg-brand-primary animate-pulse shadow-[0_0_8px_rgba(224,90,71,0.5)]",
       title: "Running...",
     },
     success: {
-      dotClass: "bg-brand-success shadow-[0_0_8px_rgba(16,185,129,0.7)]",
+      dotClass: "bg-brand-success shadow-[0_0_8px_rgba(16,185,129,0.5)]",
       title: "Success",
     },
     error: {
-      dotClass: "bg-brand-danger shadow-[0_0_8px_rgba(239,68,68,0.7)]",
+      dotClass: "bg-brand-danger shadow-[0_0_8px_rgba(239,68,68,0.5)]",
       title: "Error",
     },
   };
@@ -48,8 +48,9 @@ export function StatusBadge({ status, label, type = "job" }: StatusBadgeProps) {
 
   return (
     <span 
-      className={`w-2 h-2 rounded-full ${current.dotClass}`} 
+      className={`w-2.5 h-2.5 rounded-full ${current.dotClass} inline-block`} 
       title={label || current.title} 
     />
   );
 }
+
