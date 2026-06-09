@@ -73,8 +73,7 @@ export function WorkflowGraph() {
       columns[r].push(job.id);
     }
 
-    const nodeWidth = 210;
-    const nodeHeight = 110;
+    const nodeWidth = 220;
     const horizontalGap = 80;
     const verticalGap = 40;
 
@@ -87,16 +86,24 @@ export function WorkflowGraph() {
       const jobIds = columns[colIndex];
       const colX = colIndex * (nodeWidth + horizontalGap) + 40;
       
-      jobIds.forEach((jobId, index) => {
+      let colY = 40;
+      jobIds.forEach((jobId) => {
         const job = jobs.find((j) => j.id === jobId)!;
-        const colY = index * (nodeHeight + verticalGap) + 40;
+        const hasMatrix = job.matrix_configs && job.matrix_configs.length > 0;
+        const currentHeight = hasMatrix ? 240 : 110;
 
         initialNodes.push({
           id: jobId,
           type: "jobNode",
           position: { x: colX, y: colY },
           data: { job },
+          style: {
+            width: nodeWidth,
+            height: currentHeight
+          }
         });
+
+        colY += currentHeight + verticalGap;
 
         if (job.needs) {
           job.needs.forEach((depId) => {
@@ -135,30 +142,36 @@ export function WorkflowGraph() {
   }, [stopJob]);
 
   useEffect(() => {
-    const updatedNodes = graphData.nodes.map((node) => {
-      const jobId = node.id;
-      const job = (node.data as any).job;
-      const status = jobStatuses[jobId] || "pending";
-      const isActive = activeJob?.id === jobId;
-      const depsMet = areDependenciesMet(job, jobStatuses);
+    setNodes((prevNodes) => {
+      return graphData.nodes.map((node) => {
+        const jobId = node.id;
+        const job = (node.data as any).job;
+        const status = jobStatuses[jobId] || "pending";
+        const isActive = activeJob?.id === jobId;
+        const depsMet = areDependenciesMet(job, jobStatuses);
 
-      return {
-        ...node,
-        data: {
-          job,
-          status,
-          isActive,
-          isWorkflowRunning,
-          runningJobId,
-          depsMet,
-          onSelect: setActiveJob,
-          onRun: handleRunJob,
-          onStop: handleStopJob,
-        },
-      };
+        const existingNode = prevNodes.find((n) => n.id === jobId);
+        const currentStyle = existingNode?.style || node.style;
+        const currentPosition = existingNode?.position || node.position;
+
+        return {
+          ...node,
+          position: currentPosition,
+          style: currentStyle,
+          data: {
+            job,
+            status,
+            isActive,
+            isWorkflowRunning,
+            runningJobId,
+            depsMet,
+            onSelect: setActiveJob,
+            onRun: handleRunJob,
+            onStop: handleStopJob,
+          },
+        };
+      });
     });
-
-    setNodes(updatedNodes);
     setEdges(graphData.edges);
   }, [
     graphData,

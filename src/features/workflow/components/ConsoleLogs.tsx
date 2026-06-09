@@ -18,9 +18,22 @@ export function ConsoleLogs() {
   const isAtBottomRef = useRef(true);
   const activeJobIdRef = useRef<string | undefined>(undefined);
 
-  const activeJobLogs = activeJob ? logs[activeJob.id] || [] : [];
+  const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeJob?.matrix_configs && activeJob.matrix_configs.length > 0) {
+      setSelectedConfigId(activeJob.matrix_configs[0].id);
+    } else {
+      setSelectedConfigId(null);
+    }
+  }, [activeJob?.id]);
+
+  const activeJobLogs = selectedConfigId
+    ? logs[selectedConfigId] || []
+    : (activeJob ? logs[activeJob.id] || [] : []);
+
   const depsMet = activeJob ? areDependenciesMet(activeJob, jobStatuses) : true;
-  const isRunningThisJob = runningJobId === activeJob?.id;
+  const isRunningThisJob = activeJob ? jobStatuses[activeJob.id] === "running" : false;
 
   const handleScroll = () => {
     if (!containerRef.current) return;
@@ -56,7 +69,7 @@ export function ConsoleLogs() {
     if (isAtBottomRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-  }, [activeJobLogs.length, activeJob?.id]);
+  }, [activeJobLogs.length, activeJob?.id, selectedConfigId]);
 
   if (!activeJob) return null;
 
@@ -86,11 +99,28 @@ export function ConsoleLogs() {
       )}
 
       <div className="flex justify-between items-center py-2.5 px-4 bg-black/20 border-b border-brand-border text-xs select-none">
-        <div className="flex items-center gap-2 font-semibold text-brand-text">
+        <div className="flex items-center gap-3 font-semibold text-brand-text">
           {isRunningThisJob && (
             <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
           )}
           <span>Terminal Logs: {activeJob.name || activeJob.id}</span>
+
+          {activeJob.matrix_configs && activeJob.matrix_configs.length > 0 && (
+            <div className="flex items-center gap-1.5 bg-brand-panel border border-brand-border rounded px-2 py-0.5 ml-2">
+              <span className="text-[10px] text-brand-muted">Execution:</span>
+              <select
+                value={selectedConfigId || ""}
+                onChange={(e) => setSelectedConfigId(e.target.value)}
+                className="bg-transparent border-none text-brand-text font-sans text-[10px] font-semibold focus:outline-none cursor-pointer"
+              >
+                {activeJob.matrix_configs.map((config) => (
+                  <option key={config.id} value={config.id} className="bg-brand-panel text-brand-text">
+                    {config.name.replace(`${activeJob.id} `, "").replace(`(${activeJob.id}) `, "")}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div>
           <Button

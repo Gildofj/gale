@@ -4,11 +4,18 @@ export interface Step {
   uses: string | null;
 }
 
+export interface MatrixConfig {
+  id: string;
+  name: string;
+  values: Record<string, string>;
+}
+
 export interface Job {
   id: string;
   name: string | null;
   steps: Step[];
   needs: string[] | null;
+  matrix_configs?: MatrixConfig[];
 }
 
 export interface Workflow {

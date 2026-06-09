@@ -82,6 +82,28 @@ export const areDependenciesMet = (job: Job, statuses: Record<string, string>): 
   return job.needs.every((depId) => statuses[depId] === "success");
 };
 
+const updateBaseJobStatuses = (
+  statuses: Record<string, "pending" | "running" | "success" | "error">,
+  jobs: Job[]
+): Record<string, "pending" | "running" | "success" | "error"> => {
+  const nextStatuses = { ...statuses };
+  for (const job of jobs) {
+    if (job.matrix_configs && job.matrix_configs.length > 0) {
+      const configStatuses = job.matrix_configs.map((cfg) => nextStatuses[cfg.id] || "pending");
+      if (configStatuses.includes("error")) {
+        nextStatuses[job.id] = "error";
+      } else if (configStatuses.includes("running")) {
+        nextStatuses[job.id] = "running";
+      } else if (configStatuses.every((s) => s === "success")) {
+        nextStatuses[job.id] = "success";
+      } else {
+        nextStatuses[job.id] = "pending";
+      }
+    }
+  }
+  return nextStatuses;
+};
+
 export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   repoPath: "",
   workflows: [],
@@ -208,14 +230,39 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     const cleanupLogs = await listen<LogLine>("runner-log", (event) => {
       console.log("[ZUSTAND] runner-log event received:", event.payload);
       const jobId = event.payload.job_id;
+      const msg = event.payload.message;
       set((state) => {
         const previousLogs = state.logs[jobId] || [];
-        return {
+        const nextState: Partial<WorkflowState> = {
           logs: {
             ...state.logs,
             [jobId]: [...previousLogs, event.payload],
           },
         };
+
+        const currentStatuses = { ...state.jobStatuses };
+        let statusChanged = false;
+
+        if (msg.includes("🏁  Job succeeded")) {
+          currentStatuses[jobId] = "success";
+          statusChanged = true;
+        } else if (msg.includes("🏁  Job failed")) {
+          currentStatuses[jobId] = "error";
+          statusChanged = true;
+        } else if (
+          currentStatuses[jobId] !== "running" &&
+          currentStatuses[jobId] !== "success" &&
+          currentStatuses[jobId] !== "error"
+        ) {
+          currentStatuses[jobId] = "running";
+          statusChanged = true;
+        }
+
+        if (statusChanged) {
+          nextState.jobStatuses = updateBaseJobStatuses(currentStatuses, state.activeWorkflow?.jobs || []);
+        }
+
+        return nextState;
       });
     });
 
@@ -232,13 +279,31 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     set({ unlisteners: [] });
   },
 
-  runSingleJob: async (job) => {
+  runSingleJob: async (job: Job) => {
     set({ runningJobId: job.id });
-    set((state) => ({
-      jobStatuses: { ...state.jobStatuses, [job.id]: "running" },
-      logs: {
-        ...state.logs,
-        [job.id]: [
+    const baseId = job.id;
+    
+    set((state) => {
+      const updatedStatuses = { ...state.jobStatuses };
+      const updatedLogs = { ...state.logs };
+      
+      if (job.matrix_configs && job.matrix_configs.length > 0) {
+        job.matrix_configs.forEach((cfg) => {
+          updatedStatuses[cfg.id] = "running";
+          updatedLogs[cfg.id] = [
+            {
+              job_id: cfg.id,
+              step_name: "client-system",
+              message: `Starting local run for execution: ${cfg.name}...`,
+              stream: "stdout",
+              timestamp: Date.now(),
+            },
+          ];
+        });
+        updatedStatuses[job.id] = "running";
+      } else {
+        updatedStatuses[job.id] = "running";
+        updatedLogs[job.id] = [
           {
             job_id: job.id,
             step_name: "client-system",
@@ -246,24 +311,48 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
             stream: "stdout",
             timestamp: Date.now(),
           },
-        ],
-      },
-    }));
+        ];
+      }
+      
+      return {
+        jobStatuses: updatedStatuses,
+        logs: updatedLogs,
+      };
+    });
 
     try {
       const { repoPath, activeWorkflow } = get();
       await invoke("run_job_cmd", {
         repoPath,
         workflowFile: activeWorkflow!.file_path,
-        jobId: job.id,
+        jobId: baseId,
       });
 
-      set((state) => ({
-        jobStatuses: { ...state.jobStatuses, [job.id]: "success" },
-        logs: {
-          ...state.logs,
-          [job.id]: [
-            ...(state.logs[job.id] || []),
+      set((state) => {
+        const updatedStatuses = { ...state.jobStatuses };
+        const updatedLogs = { ...state.logs };
+        const activeWorkflow = state.activeWorkflow;
+        if (job.matrix_configs && job.matrix_configs.length > 0) {
+          job.matrix_configs.forEach((cfg) => {
+            const currentStatus = updatedStatuses[cfg.id];
+            if (currentStatus === "running" || currentStatus === "pending") {
+              updatedStatuses[cfg.id] = "success";
+            }
+            updatedLogs[cfg.id] = [
+              ...(updatedLogs[cfg.id] || []),
+              {
+                job_id: cfg.id,
+                step_name: "client-system",
+                message: "Execution completed successfully!",
+                stream: "stdout",
+                timestamp: Date.now(),
+              },
+            ];
+          });
+        } else {
+          updatedStatuses[job.id] = "success";
+          updatedLogs[job.id] = [
+            ...(updatedLogs[job.id] || []),
             {
               job_id: job.id,
               step_name: "client-system",
@@ -271,17 +360,42 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
               stream: "stdout",
               timestamp: Date.now(),
             },
-          ],
-        },
-      }));
+          ];
+        }
+        
+        const nextStatuses = updateBaseJobStatuses(updatedStatuses, activeWorkflow?.jobs || []);
+        return {
+          jobStatuses: nextStatuses,
+          logs: updatedLogs,
+        };
+      });
       return true;
     } catch (err) {
-      set((state) => ({
-        jobStatuses: { ...state.jobStatuses, [job.id]: "error" },
-        logs: {
-          ...state.logs,
-          [job.id]: [
-            ...(state.logs[job.id] || []),
+      set((state) => {
+        const updatedStatuses = { ...state.jobStatuses };
+        const updatedLogs = { ...state.logs };
+        const activeWorkflow = state.activeWorkflow;
+        if (job.matrix_configs && job.matrix_configs.length > 0) {
+          job.matrix_configs.forEach((cfg) => {
+            const currentStatus = updatedStatuses[cfg.id];
+            if (currentStatus === "running" || currentStatus === "pending") {
+              updatedStatuses[cfg.id] = "error";
+            }
+            updatedLogs[cfg.id] = [
+              ...(updatedLogs[cfg.id] || []),
+              {
+                job_id: cfg.id,
+                step_name: "client-system",
+                message: `Execution failed/cancelled: ${err}`,
+                stream: "stderr",
+                timestamp: Date.now(),
+              },
+            ];
+          });
+        } else {
+          updatedStatuses[job.id] = "error";
+          updatedLogs[job.id] = [
+            ...(updatedLogs[job.id] || []),
             {
               job_id: job.id,
               step_name: "client-system",
@@ -289,9 +403,15 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
               stream: "stderr",
               timestamp: Date.now(),
             },
-          ],
-        },
-      }));
+          ];
+        }
+        
+        const nextStatuses = updateBaseJobStatuses(updatedStatuses, activeWorkflow?.jobs || []);
+        return {
+          jobStatuses: nextStatuses,
+          logs: updatedLogs,
+        };
+      });
       return false;
     } finally {
       set({ runningJobId: null });
@@ -318,6 +438,12 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     for (const job of activeWorkflow.jobs) {
       initialStatuses[job.id] = "pending";
       initialLogs[job.id] = [];
+      if (job.matrix_configs) {
+        for (const cfg of job.matrix_configs) {
+          initialStatuses[cfg.id] = "pending";
+          initialLogs[cfg.id] = [];
+        }
+      }
     }
     set({ jobStatuses: initialStatuses, logs: initialLogs });
 
@@ -327,6 +453,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       const { abortWorkflow, jobStatuses: currentStatuses } = get();
       if (abortWorkflow) {
         break;
+      }
+
+      // If the job has already completed (e.g. as part of a matrix run), skip it!
+      if (currentStatuses[job.id] === "success" || currentStatuses[job.id] === "error") {
+        continue;
       }
 
       // Valida se pré-requisitos tiveram sucesso

@@ -1,6 +1,7 @@
 import React, { memo } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, NodeResizer } from "@xyflow/react";
 import { Job } from "../../../entities/pipeline";
+import { useWorkflowStore } from "../store/workflowStore";
 
 interface JobNodeData {
   job: Job;
@@ -27,7 +28,8 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
     onStop,
   } = data;
 
-  const isRunningThis = runningJobId === job.id;
+  const { jobStatuses } = useWorkflowStore();
+  const isRunningThis = status === "running";
   const isButtonDisabled = isWorkflowRunning || (runningJobId !== null && !isRunningThis) || !depsMet;
 
   const handleActionClick = (e: React.MouseEvent) => {
@@ -74,14 +76,30 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
   const currentStyle = statusStyles[status] || statusStyles.pending;
 
   return (
-    <div
-      onClick={() => onSelect(job)}
-      className={`px-4 py-3 rounded-lg border-2 text-left min-w-[200px] select-none transition-all duration-200 hover:shadow-lg ${
-        currentStyle.bg
-      } ${currentStyle.border} ${currentStyle.glow} ${
-        isActive ? "shadow-[0_0_12px_rgba(224,90,71,0.15)] scale-[1.02]" : "hover:border-brand-muted/40"
-      } ${!depsMet ? "opacity-60 border-dashed" : ""}`}
-    >
+    <div className="w-full h-full nopan relative">
+      <NodeResizer
+        minWidth={220}
+        maxWidth={480}
+        minHeight={job.matrix_configs && job.matrix_configs.length > 0 ? 180 : 110}
+        maxHeight={500}
+        isVisible={isActive}
+        keepAspectRatio={false}
+        handleStyle={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--color-brand-primary)',
+          border: '1px solid var(--color-brand-bg)'
+        }}
+      />
+      <div
+        onClick={() => onSelect(job)}
+        className={`w-full h-full px-4 py-3 rounded-lg border-2 text-left select-none transition-all duration-200 hover:shadow-lg flex flex-col overflow-hidden ${
+          currentStyle.bg
+        } ${currentStyle.border} ${currentStyle.glow} ${
+          isActive ? "shadow-[0_0_12px_rgba(224,90,71,0.15)] scale-[1.02]" : "hover:border-brand-muted/40"
+        } ${!depsMet ? "opacity-60 border-dashed" : ""}`}
+      >
       {job.needs && job.needs.length > 0 && (
         <Handle
           type="target"
@@ -90,7 +108,7 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
         />
       )}
 
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-2 shrink-0">
         <span className="font-mono text-[10px] font-bold text-brand-muted uppercase tracking-wider">
           Job
         </span>
@@ -107,11 +125,40 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
         </div>
       </div>
 
-      <div className="font-semibold text-sm text-brand-text truncate pr-4 mb-2" title={job.name || job.id}>
+      <div className="font-semibold text-sm text-brand-text truncate pr-4 mb-2 shrink-0" title={job.name || job.id}>
         {job.name || job.id}
       </div>
 
-      <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-brand-border/60">
+      {job.matrix_configs && job.matrix_configs.length > 0 && (
+        <div className="mt-2 mb-2.5 pt-2 border-t border-brand-border/40 flex flex-col gap-1 select-none flex-1 min-h-0">
+          <div className="text-[9px] font-bold text-brand-muted uppercase tracking-wider mb-0.5 shrink-0">
+            Matrix Executions
+          </div>
+          <div className="flex flex-col gap-1 overflow-y-auto custom-scrollbar pr-1 flex-1 min-h-0">
+            {job.matrix_configs.map((config) => {
+              const configStatus = jobStatuses[config.id] || "pending";
+              const dotColors = {
+                pending: "bg-brand-dark border border-brand-muted/40",
+                running: "bg-brand-primary animate-pulse",
+                success: "bg-brand-success",
+                error: "bg-brand-danger",
+              };
+              return (
+                <div key={config.id} className="flex items-center justify-between text-[10px] text-brand-text/90 bg-white/5 py-0.5 px-2 rounded border border-brand-border/20 font-mono w-full">
+                  <span className="flex-1 truncate font-semibold mr-2" title={config.name}>
+                    {config.name.replace(`${job.id} `, "").replace(`(${job.id}) `, "")}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className={`w-1.5 h-1.5 rounded-full ${dotColors[configStatus]}`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center mt-auto pt-2 border-t border-brand-border/60 shrink-0">
         <div className="text-[10px] text-brand-muted font-medium font-mono">
           {job.steps.length} {job.steps.length === 1 ? "step" : "steps"}
         </div>
@@ -144,6 +191,7 @@ export const JobNode = memo(({ data }: { data: JobNodeData }) => {
         className="w-2 h-2 rounded-full border border-brand-bg bg-brand-primary"
       />
     </div>
+  </div>
   );
 });
 

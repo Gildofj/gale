@@ -7,12 +7,22 @@ pub struct Step {
     pub uses: Option<String>,
 }
 
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatrixConfig {
+    pub id: String,
+    pub name: String,
+    pub values: HashMap<String, String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
     pub id: String,
     pub name: Option<String>,
     pub steps: Vec<Step>,
     pub needs: Option<Vec<String>>,
+    pub matrix_configs: Option<Vec<MatrixConfig>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

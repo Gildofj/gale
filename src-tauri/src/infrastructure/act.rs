@@ -155,14 +155,15 @@ impl RunnerService for ActRunnerService {
             let mut reader = BufReader::new(stdout).lines();
             while let Ok(Some(line)) = reader.next_line().await {
                 println!("[BACKEND stdout] {}", line);
-                let (step_name, clean_msg) = parse_act_line(&line);
+                let (job_instance_id, step_name, clean_msg) = parse_act_line(&line);
+                let actual_job_id = job_instance_id.unwrap_or_else(|| job_id_str1.clone());
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_millis() as u64;
 
                 log_cb_1(LogLine {
-                    job_id: job_id_str1.clone(),
+                    job_id: actual_job_id,
                     step_name,
                     message: clean_msg,
                     stream: "stdout".to_string(),
@@ -175,14 +176,15 @@ impl RunnerService for ActRunnerService {
             let mut reader = BufReader::new(stderr).lines();
             while let Ok(Some(line)) = reader.next_line().await {
                 println!("[BACKEND stderr] {}", line);
-                let (step_name, clean_msg) = parse_act_line(&line);
+                let (job_instance_id, step_name, clean_msg) = parse_act_line(&line);
+                let actual_job_id = job_instance_id.unwrap_or_else(|| job_id_str2.clone());
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_millis() as u64;
 
                 log_cb_2(LogLine {
-                    job_id: job_id_str2.clone(),
+                    job_id: actual_job_id,
                     step_name,
                     message: clean_msg,
                     stream: "stderr".to_string(),
@@ -214,8 +216,24 @@ impl RunnerService for ActRunnerService {
     }
 }
 
-fn parse_act_line(line: &str) -> (String, String) {
-    let parts: Vec<&str> = line.splitn(2, '|').collect();
+fn parse_act_line(line: &str) -> (Option<String>, String, String) {
+    let mut line_to_parse = line;
+    let mut job_instance_id = None;
+
+    // 1. Try to extract prefix [Workflow/Job-Instance]
+    if line.starts_with('[') {
+        if let Some(close_bracket_idx) = line.find(']') {
+            let prefix = &line[1..close_bracket_idx];
+            if let Some(slash_idx) = prefix.find('/') {
+                let job_id = &prefix[slash_idx + 1..];
+                job_instance_id = Some(job_id.trim().to_string());
+            }
+            line_to_parse = line[close_bracket_idx + 1..].trim_start();
+        }
+    }
+
+    // Now parse step and message from line_to_parse
+    let parts: Vec<&str> = line_to_parse.splitn(2, '|').collect();
     if parts.len() == 2 {
         let prefix = parts[0].trim();
         let msg = parts[1];
@@ -226,16 +244,16 @@ fn parse_act_line(line: &str) -> (String, String) {
         } else {
             "run".to_string()
         };
-        return (step, msg.to_string());
+        return (job_instance_id, step, msg.to_string());
     }
 
-    if line.contains(" * ") {
-        let parts: Vec<&str> = line.split(" * ").collect();
+    if line_to_parse.contains(" * ") {
+        let parts: Vec<&str> = line_to_parse.split(" * ").collect();
         if parts.len() >= 2 {
             let step = parts[1].replace("Run ", "").trim().to_string();
-            return (step, line.to_string());
+            return (job_instance_id, step, line_to_parse.to_string());
         }
     }
 
-    ("system".to_string(), line.to_string())
+    (job_instance_id, "system".to_string(), line_to_parse.to_string())
 }
