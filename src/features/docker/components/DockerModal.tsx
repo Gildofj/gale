@@ -132,7 +132,7 @@ export function DockerModal() {
         {(["containers", "images", "volumes", "settings"] as TabType[]).map((tab) => (
           <button
             key={tab}
-            className={`px-4 py-2 text-xs font-semibold capitalize cursor-pointer border-b-2 -mb-[2px] transition-all duration-150 ${
+            className={`px-4 py-2 text-xs font-semibold capitalize cursor-pointer border-b-2 -mb-0.5 transition-all duration-150 ${
               activeTab === tab
                 ? "border-brand-primary text-brand-primary font-bold"
                 : "border-transparent text-brand-muted hover:text-brand-text"
@@ -145,7 +145,7 @@ export function DockerModal() {
       </div>
 
       {/* Tab Contents */}
-      <div className="flex-1 flex flex-col min-h-[260px] max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
+      <div className="flex-1 flex flex-col min-h-65 max-h-90 overflow-y-auto pr-1 custom-scrollbar">
         {loading ? (
           <div className="flex-1 flex flex-col justify-center items-center py-12 gap-3 text-brand-muted text-xs select-none">
             <div className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
@@ -351,7 +351,7 @@ export function DockerModal() {
                         onChange={() => toggleSetting("autoPruneOnWorkspaceSwitch")}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-brand-dark/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-brand-text after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary"></div>
+                      <div className="w-9 h-5 bg-brand-dark/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-brand-text after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary"></div>
                     </label>
                   </div>
 
@@ -371,7 +371,7 @@ export function DockerModal() {
                         onChange={() => toggleSetting("autoPruneOnStartup")}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-brand-dark/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-brand-text after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary"></div>
+                      <div className="w-9 h-5 bg-brand-dark/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-brand-text after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-primary"></div>
                     </label>
                   </div>
                 </div>

@@ -31,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children, footer, widthClass }: 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className={`${widthClass || "w-[450px]"} bg-brand-panel border border-brand-border rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[85vh] transform transition-all scale-100`}
+        className={`${widthClass || "w-112.5"} bg-brand-panel border border-brand-border rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[85vh] transform transition-all scale-100`}
         role="dialog"
         aria-modal="true"
       >

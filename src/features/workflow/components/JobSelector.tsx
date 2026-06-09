@@ -31,7 +31,7 @@ export function JobSelector() {
           <span className="text-[10px] font-bold uppercase tracking-wider text-brand-muted font-mono">
             Active Workflow
           </span>
-          <span className="text-sm font-bold text-brand-text truncate max-w-[200px]" title={activeWorkflow.name}>
+          <span className="text-sm font-bold text-brand-text truncate max-w-50" title={activeWorkflow.name}>
             {activeWorkflow.name}
           </span>
         </div>

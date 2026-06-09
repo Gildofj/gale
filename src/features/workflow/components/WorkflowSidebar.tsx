@@ -15,7 +15,7 @@ export function WorkflowSidebar() {
   };
 
   return (
-    <div className="w-[300px] bg-brand-panel border-r border-brand-border flex flex-col overflow-y-auto select-none custom-scrollbar">
+    <div className="w-75 bg-brand-panel border-r border-brand-border flex flex-col overflow-y-auto select-none custom-scrollbar">
       <div className="py-3 px-4 text-[10px] uppercase tracking-wider text-brand-muted font-bold border-b border-brand-border">
         Workflows
       </div>
@@ -35,8 +35,8 @@ export function WorkflowSidebar() {
             onClick={() => setActiveWorkflow(wf)}
           >
             <div className="flex justify-between items-center mb-1">
-              <div className="font-semibold text-sm truncate max-w-[170px]">{wf.name}</div>
-              <div className="text-[9px] py-0.5 px-1.5 bg-brand-panel-header rounded text-brand-muted font-medium truncate max-w-[90px]">
+              <div className="font-semibold text-sm truncate max-w-42.5">{wf.name}</div>
+              <div className="text-[9px] py-0.5 px-1.5 bg-brand-panel-header rounded text-brand-muted font-medium truncate max-w-22.5">
                 {wf.events.join(", ")}
               </div>
             </div>

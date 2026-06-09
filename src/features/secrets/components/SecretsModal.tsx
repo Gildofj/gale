@@ -70,7 +70,7 @@ export function SecretsModal() {
       </div>
       
       {/* Secrets List */}
-      <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+      <div className="flex flex-col gap-2 max-h-50 overflow-y-auto pr-1 custom-scrollbar">
         {Object.keys(secrets).length === 0 ? (
           <div className="text-center text-xs text-brand-dark italic py-4">
             No secrets configured for this repository yet.

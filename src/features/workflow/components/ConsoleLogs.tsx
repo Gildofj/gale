@@ -146,10 +146,10 @@ export function ConsoleLogs() {
         ) : (
           activeJobLogs.map((log, index) => (
             <div key={index} className="flex gap-3 py-0.5 px-1 rounded hover:bg-white/5">
-              <div className="text-brand-dark min-w-[70px] select-none">
+              <div className="text-brand-dark min-w-17.5 select-none">
                 {new Date(log.timestamp).toLocaleTimeString()}
               </div>
-              <div className="text-brand-primary min-w-[95px] font-semibold select-none truncate max-w-[120px]" title={log.step_name}>
+              <div className="text-brand-primary min-w-23.75 font-semibold select-none truncate max-w-30" title={log.step_name}>
                 [{log.step_name}]
               </div>
               <div 
