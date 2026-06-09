@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useWorkflowStore } from "../../workflow/store/workflowStore";
 import { useSecretsStore } from "../../secrets/store/secretsStore";
+import { useDockerStore } from "../../docker/store/dockerStore";
 import { Button } from "../../../shared/components/Button";
 import { StatusBadge } from "../../../shared/components/StatusBadge";
 
@@ -19,6 +20,10 @@ export function WorkspaceHeader() {
     setSecretsModalOpen,
   } = useSecretsStore();
 
+  const {
+    setModalOpen: setDockerModalOpen,
+  } = useDockerStore();
+
   // Executa checagem inicial de dependências ao carregar
   useEffect(() => {
     checkDependencies();
@@ -32,11 +37,23 @@ export function WorkspaceHeader() {
           <span className="font-semibold text-brand-primary">Local Pipeline Orchestrator</span>
         </div>
         <div className="flex gap-4 items-center">
-          <StatusBadge 
-            type="dependency" 
-            status={dockerInstalled} 
-            label="Docker" 
-          />
+          <div className="flex items-center gap-1.5">
+            <StatusBadge 
+              type="dependency" 
+              status={dockerInstalled} 
+              label="Docker" 
+            />
+            {dockerInstalled && (
+              <button
+                onClick={() => setDockerModalOpen(true)}
+                className="text-[10px] text-brand-muted hover:text-brand-primary cursor-pointer transition-all duration-150 flex items-center gap-1 bg-brand-console hover:bg-brand-primary/10 border border-brand-border hover:border-brand-primary/30 rounded px-1.5 py-0.5"
+                title="Manage Docker Resources"
+              >
+                <span>⚙️</span>
+                <span>Manage</span>
+              </button>
+            )}
+          </div>
           <StatusBadge 
             type="dependency" 
             status={actInstalled} 

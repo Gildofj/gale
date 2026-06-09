@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { Workflow, Job, LogLine } from "../../../entities/pipeline";
+import { useDockerStore } from "../../docker/store/dockerStore";
 
 interface WorkflowState {
   repoPath: string;
@@ -148,6 +149,9 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         set({ activeWorkflow: null, activeJob: null });
       }
       set({ logs: {}, runningJobId: null, jobStatuses: {} });
+      
+      // Auto clean stopped Docker resources of other/inactive workspaces
+      useDockerStore.getState().autoCleanOnWorkspaceSwitch();
     } catch (err) {
       console.error("Failed to list workflows:", err);
     }

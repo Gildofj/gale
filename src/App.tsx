@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { useWorkflowStore } from "./features/workflow/store/workflowStore";
+import { useDockerStore } from "./features/docker/store/dockerStore";
 import { WorkspaceHeader } from "./features/workspace/components/WorkspaceHeader";
 import { WorkflowSidebar } from "./features/workflow/components/WorkflowSidebar";
 import { JobSelector } from "./features/workflow/components/JobSelector";
 import { ConsoleLogs } from "./features/workflow/components/ConsoleLogs";
 import { SecretsModal } from "./features/secrets/components/SecretsModal";
+import { DockerModal } from "./features/docker/components/DockerModal";
 import "./index.css";
 
 export default function App() {
@@ -15,13 +17,16 @@ export default function App() {
     cleanupListeners,
   } = useWorkflowStore();
 
+  const { autoCleanOnStartup } = useDockerStore();
+
   // Inicializa listeners do IPC do Tauri (runner-log, workflows-changed)
   useEffect(() => {
     initListeners();
+    autoCleanOnStartup();
     return () => {
       cleanupListeners();
     };
-  }, [initListeners, cleanupListeners, repoPath]);
+  }, [initListeners, cleanupListeners, repoPath, autoCleanOnStartup]);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-brand-bg text-brand-text font-sans overflow-hidden">
@@ -57,6 +62,9 @@ export default function App() {
 
       {/* Modal de gerenciamento de secrets local */}
       <SecretsModal />
+
+      {/* Modal de gerenciamento de recursos Docker */}
+      <DockerModal />
     </div>
   );
 }

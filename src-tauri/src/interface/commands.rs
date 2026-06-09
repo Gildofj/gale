@@ -192,4 +192,51 @@ pub fn import_secrets_from_env_cmd(
     Ok(current_secrets)
 }
 
+use crate::domain::docker::{DockerSystemSummary, DockerContainerInfo, DockerImageInfo, DockerVolumeInfo};
+
+#[tauri::command]
+pub async fn get_docker_summary_cmd() -> Result<DockerSystemSummary, String> {
+    crate::infrastructure::docker::get_docker_summary().await
+}
+
+#[tauri::command]
+pub async fn list_docker_containers_cmd() -> Result<Vec<DockerContainerInfo>, String> {
+    crate::infrastructure::docker::list_containers().await
+}
+
+#[tauri::command]
+pub async fn list_docker_images_cmd() -> Result<Vec<DockerImageInfo>, String> {
+    crate::infrastructure::docker::list_images().await
+}
+
+#[tauri::command]
+pub async fn list_docker_volumes_cmd() -> Result<Vec<DockerVolumeInfo>, String> {
+    crate::infrastructure::docker::list_volumes().await
+}
+
+#[tauri::command]
+pub async fn prune_docker_containers_cmd() -> Result<u32, String> {
+    crate::infrastructure::docker::prune_containers().await
+}
+
+#[tauri::command]
+pub async fn prune_docker_volumes_cmd() -> Result<u32, String> {
+    crate::infrastructure::docker::prune_volumes().await
+}
+
+#[tauri::command]
+pub async fn prune_docker_images_cmd() -> Result<u32, String> {
+    crate::infrastructure::docker::prune_images().await
+}
+
+#[tauri::command]
+pub async fn delete_docker_container_cmd(id: String) -> Result<(), String> {
+    crate::infrastructure::docker::delete_container(&id).await
+}
+
+#[tauri::command]
+pub async fn delete_docker_image_cmd(id: String) -> Result<(), String> {
+    crate::infrastructure::docker::delete_image(&id).await
+}
+
 
